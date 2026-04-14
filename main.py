@@ -76,53 +76,47 @@ if page == "今日打卡 & 日历":
     df_c = load_checkin()
     checkin_dict = dict(zip(df_c['date'], df_c['rate']))
     
+    # 构建纯 HTML 日历
     cal = calendar.monthcalendar(today.year, today.month)
     weekdays = ["一", "二", "三", "四", "五", "六", "日"]
     
-    # 打印表头
-    cols = st.columns(7)
-    for i, wd in enumerate(weekdays):
-        cols[i].write(f"**{wd}**")
+    # HTML 样式
+    html_content = """
+    <style>
+        .cal-container { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-header { font-weight: bold; padding: 5px 0; font-size: 0.8em; color: #888; }
+        .cal-day { border-radius: 8px; padding: 10px 0; font-weight: bold; font-size: 0.9em; border: 1px solid #eee; }
+    </style>
+    <div class="cal-container">
+    """
 
-    # 打印日期格子
+    # 添加表头
+    for wd in weekdays:
+        html_content += f'<div class="cal-header">{wd}</div>'
+    
+    # 添加日期格子
     for week in cal:
-        cols = st.columns(7)
-        for i, day in enumerate(week):
+        for day in week:
             if day == 0:
-                cols[i].write(" ")
+                html_content += '<div></div>'
             else:
                 date_s = f"{today.year}-{today.month:02d}-{day:02d}"
-                bg_color = "#ffffff" # 默认白色
-                text_color = "#333333"
-                border_style = "1px solid #eeeeee"
+                bg_color = "#ffffff"
+                text_color = "#333"
+                border_color = "#eee"
                 
-                # 变色逻辑
                 if date_s in checkin_dict:
                     r = checkin_dict[date_s]
-                    if r >= 1.0: 
-                        bg_color = "#52c41a" # 全满绿
-                        text_color = "white"
-                    elif r > 0: 
-                        bg_color = "#fadb14" # 部分黄
-                        text_color = "black"
+                    if r >= 1.0: bg_color = "#52c41a"; text_color = "white"
+                    elif r > 0: bg_color = "#fadb14"; text_color = "black"
                 
                 if date_s == today_str:
-                    border_style = "2px solid #1890ff" # 今日蓝框
+                    border_color = "#1890ff"
                 
-                # 直接通过 HTML 构建方块
-                st_html = f"""
-                <div style="
-                    background-color: {bg_color};
-                    color: {text_color};
-                    border: {border_style};
-                    border-radius: 8px;
-                    padding: 10px 0px;
-                    text-align: center;
-                    font-weight: bold;
-                    margin-bottom: 5px;
-                ">{day}</div>
-                """
-                cols[i].markdown(st_html, unsafe_allow_html=True)
+                html_content += f'<div class="cal-day" style="background-color:{bg_color}; color:{text_color}; border: 2px solid {border_color};">{day}</div>'
+    
+    html_content += "</div>"
+    st.markdown(html_content, unsafe_allow_html=True)
     
     st.caption("🟢 全勤 | 🟡 部分完成 | ⚪️ 未记录 | 🔵 蓝色边框为今日")
 
